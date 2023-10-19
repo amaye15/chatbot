@@ -21,6 +21,14 @@ LOGGER = get_logger(__name__)
 import logging
 logging.basicConfig(filename='feedback.log', level=logging.INFO, format='%(asctime)s %(message)s')
 
+import requests
+
+def query(payload, model_id, api_token = "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"):
+	headers = {"Authorization": f"Bearer {api_token}"}
+	API_URL = f"https://api-inference.huggingface.co/models/{model_id}"
+	response = requests.post(API_URL, headers=headers, json=payload)
+	return response.json()
+
 
 
 def run():
@@ -30,40 +38,28 @@ def run():
         page_icon="👋",
     )
 
-    st.write("# Welcome to Streamlit! 👋")
 
-    st.sidebar.success("Select a demo above.")
-
-    st.markdown(
-        """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
-        ### See more complex demos
-        - Use a neural net to [analyze the Udacity Self-driving Car Image
-          Dataset](https://github.com/streamlit/demo-self-driving)
-        - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    """
-    )
     # Import required libraries
     #import streamlit as st
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
+    model_id = "gpt2"
+
     # Initialize the GPT-2 model and tokenizer
-    tokenizer = AutoTokenizer.from_pretrained("gpt2")
-    model = AutoModelForCausalLM.from_pretrained("gpt2")
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    model = AutoModelForCausalLM.from_pretrained(model_id)
 
     # Create the Streamlit web app
     st.title("Chat with GPT-2")
 
     # Create a text input for the user
     user_input = st.text_input("You: ", "")
+
+    #model_id = "distilbert-base-uncased"
+    api_token = "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" # get yours at hf.co/settings/tokens
+    data = query(user_input, model_id, api_token)
+
+    print(data)
 
     # Generate a response from the model if the user enters input
     if user_input:
