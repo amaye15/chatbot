@@ -14,11 +14,17 @@
 
 import streamlit as st
 from streamlit.logger import get_logger
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 LOGGER = get_logger(__name__)
+# Initialize the logger
+import logging
+logging.basicConfig(filename='feedback.log', level=logging.INFO, format='%(asctime)s %(message)s')
+
 
 
 def run():
+    
     st.set_page_config(
         page_title="Hello",
         page_icon="👋",
@@ -45,7 +51,48 @@ def run():
         - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
     """
     )
+    # Import required libraries
+    #import streamlit as st
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
+    # Initialize the GPT-2 model and tokenizer
+    tokenizer = AutoTokenizer.from_pretrained("gpt2")
+    model = AutoModelForCausalLM.from_pretrained("gpt2")
+
+    # Create the Streamlit web app
+    st.title("Chat with GPT-2")
+
+    # Create a text input for the user
+    user_input = st.text_input("You: ", "")
+
+    # Generate a response from the model if the user enters input
+    if user_input:
+        # Encode the user's input and generate a response
+        new_user_input_ids = tokenizer.encode(user_input + tokenizer.eos_token, return_tensors='pt')
+        chat_output = model.generate(
+            new_user_input_ids, 
+            max_length=100, 
+            pad_token_id=tokenizer.eos_token_id,
+            num_return_sequences=5,  # Generate 5 responses
+            num_beams=5  # Use beam search with 5 beams
+        )
+        
+        # Decode and display each of the model's outputs
+        for i, output in enumerate(chat_output):
+            chat_output_text = tokenizer.decode(output[new_user_input_ids.shape[-1]:], skip_special_tokens=True)
+            st.write(f"Response {i+1}: {chat_output_text}")
+
+            # Collect user feedback
+            feedback_up = st.button(f"👍 Thumbs Up for Response {i+1}")
+            feedback_down = st.button(f"👎 Thumbs Down for Response {i+1}")
+            
+            if feedback_up:
+                st.write("Thanks for your feedback!")
+                logging.info(f"User Input: {user_input} | Model Response: {chat_output_text} | Feedback: Thumbs Up")
+
+            if feedback_down:
+                st.write("Thanks for your feedback!")
+                logging.info(f"User Input: {user_input} | Model Response: {chat_output_text} | Feedback: Thumbs Down")
 
 if __name__ == "__main__":
     run()
