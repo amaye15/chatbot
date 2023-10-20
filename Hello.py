@@ -26,7 +26,7 @@ import requests
 def query(payload, model_id, api_token = "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"):
 	headers = {"Authorization": f"Bearer {api_token}"}
 	API_URL = f"https://api-inference.huggingface.co/models/{model_id}"
-	response = requests.post(API_URL, headers=headers, json=payload)
+	response = requests.post(API_URL, headers=headers, json= payload )
 	return response.json()
 
 
@@ -34,61 +34,70 @@ def query(payload, model_id, api_token = "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"
 def run():
     
     st.set_page_config(
-        page_title="Hello",
+        page_title="Demo",
         page_icon="👋",
+        layout="wide"
     )
 
+    # Create the Streamlit web app
+    st.title("Chat with GPT-2")
 
-    # Import required libraries
-    #import streamlit as st
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    model_id = "mistralai/Mistral-7B-Instruct-v0.1"
+    model_id = "gpt2"
+    #api_token = "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" # get yours at hf.co/settings/tokens
 
     # Initialize the GPT-2 model and tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModelForCausalLM.from_pretrained(model_id)
 
-    # Create the Streamlit web app
-    st.title("Chat with GPT-2")
-
     # Create a text input for the user
     user_input = st.text_input("You: ", "")
 
-    #model_id = "distilbert-base-uncased"
-    #api_token = "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" # get yours at hf.co/settings/tokens
-    #data = query(user_input, "meta-llama/Llama-2-7b", api_token)
+    #data = query(user_input, model_id, api_token)
 
-    #print(data)
+    # Create columns for response text and feedback buttons
+    col1, col2, col3 = st.columns([1, 1, 1])
 
+    temperatures = [1.0, 10.0, 100.0]
+    with st.form(key='my_form'):
     # Generate a response from the model if the user enters input
-    if user_input:
-        # Encode the user's input and generate a response
-        new_user_input_ids = tokenizer.encode("<s>[INST]" + user_input + " [/INST]", return_tensors='pt')
-        chat_output = model.generate(
-            new_user_input_ids, 
-            max_length=100, 
-            pad_token_id=tokenizer.eos_token_id,
-            num_return_sequences=5,  # Generate 5 responses
-            num_beams=5  # Use beam search with 5 beams
-        )
+        if user_input:
         
-        # Decode and display each of the model's outputs
-        for i, output in enumerate(chat_output):
-            chat_output_text = tokenizer.decode(output[new_user_input_ids.shape[-1]:], skip_special_tokens=True)
-            st.write(f"Response {i+1}: {chat_output_text}")
+            for i, temp in enumerate(temperatures):
+                # Encode the user's input and generate a response
+                new_user_input_ids = tokenizer.encode(tokenizer.eos_token + user_input, return_tensors='pt')
 
-            # Collect user feedback
-            feedback_up = st.button(f"👍 Thumbs Up for Response {i+1}")
-            feedback_down = st.button(f"👎 Thumbs Down for Response {i+1}")
-            
-            if feedback_up:
-                st.write("Thanks for your feedback!")
-                logging.info(f"User Input: {user_input} | Model Response: {chat_output_text} | Feedback: Thumbs Up")
+                chat_output = model.generate(
+                    new_user_input_ids, 
+                    max_length=100, 
+                    pad_token_id=tokenizer.eos_token_id,
+                    #num_return_sequences=5,  # Generate 5 responses
+                    #num_beams=5,  # Use beam search with 5 beams
+                    temperature=temp,  # Different temperature values for diversity
+                    do_sample = True,
+                    no_repeat_ngram_size=1)
+                
+                # Decode and display each of the model's outputs
+                for output in chat_output:
+                    chat_output_text = tokenizer.decode(output[new_user_input_ids.shape[-1]:], skip_special_tokens=True)
+                    
+                    st.write(f"Response {i+1}: {chat_output_text}")
 
-            if feedback_down:
-                st.write("Thanks for your feedback!")
-                logging.info(f"User Input: {user_input} | Model Response: {chat_output_text} | Feedback: Thumbs Down")
+                    # Collect user feedback using a slider
+                    rating = st.slider(f"Rate Response {i+1}", min_value=1, max_value=10, value=1)
+
+                    # Collect user feedback
+                    #feedback_up = st.button(f"👍 Thumbs Up for Response {i+1}")
+                    #feedback_down = st.button(f"👎 Thumbs Down for Response {i+1}")
+                    
+                    #if col2.button(f"👍 {i+1}"):
+                        #st.write("Thanks for your feedback!")
+                        #logging.info(f"User Input: {user_input} | Model Response: {chat_output_text} | Feedback: Thumbs Up")
+
+                    #if col3.button(f"👎 {i+1}"):
+                        #st.write("Thanks for your feedback!")
+                        #logging.info(f"User Input: {user_input} | Model Response: {chat_output_text} | Feedback: Thumbs Down")
+        submit_button = st.form_submit_button(label='Submit')
+        
 
 if __name__ == "__main__":
     run()
