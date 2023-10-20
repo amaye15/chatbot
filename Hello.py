@@ -43,7 +43,7 @@ def run():
     #import streamlit as st
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    model_id = "gpt2"
+    model_id = "mistralai/Mistral-7B-Instruct-v0.1"
 
     # Initialize the GPT-2 model and tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -56,15 +56,15 @@ def run():
     user_input = st.text_input("You: ", "")
 
     #model_id = "distilbert-base-uncased"
-    api_token = "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" # get yours at hf.co/settings/tokens
-    data = query(user_input, model_id, api_token)
+    #api_token = "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" # get yours at hf.co/settings/tokens
+    #data = query(user_input, "meta-llama/Llama-2-7b", api_token)
 
-    print(data)
+    #print(data)
 
     # Generate a response from the model if the user enters input
     if user_input:
         # Encode the user's input and generate a response
-        new_user_input_ids = tokenizer.encode(user_input + tokenizer.eos_token, return_tensors='pt')
+        new_user_input_ids = tokenizer.encode("<s>[INST]" + user_input + " [/INST]", return_tensors='pt')
         chat_output = model.generate(
             new_user_input_ids, 
             max_length=100, 
